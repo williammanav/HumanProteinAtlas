@@ -140,6 +140,19 @@ expression_range = st.sidebar.slider(
 
 st.sidebar.divider()
 
+st.write("1. App started")
+
+load_css("style.css")
+st.write("2. CSS loaded")
+
+df = load_data("proteinatlas_search.tsv")
+st.write("3. Data loaded")
+
+normal_cols, cell_cols, metadata = detect_columns(df)
+st.write("4. Columns detected")
+
+filtered = filter_data(...)
+st.write("5. Data filtered")
 st.sidebar.info(
     """
 Human Protein Atlas (HPA)
