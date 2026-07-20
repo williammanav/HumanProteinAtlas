@@ -20,17 +20,226 @@ st.set_page_config(
 # Helper & Utility Functions
 # ----------------------------
 
-def load_css(css_file_path):
+def inject_custom_css():
     """
-    Safely resolves the path to the CSS file and injects its contents
-    into the Streamlit app.
+    Injects custom CSS directly into the Streamlit app to maintain premium design
+    without needing an external style.css file.
     """
-    css_path = Path(css_file_path)
-    if css_path.exists():
-        with open(css_path) as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    else:
-        st.warning(f"CSS file not found at {css_file_path}")
+    st.markdown(
+        """
+        <style>
+        /* ==========================================================
+           GENERAL & THEME OVERRIDES
+           ========================================================== */
+        html, body, [class*="css"] {
+            font-family: "Segoe UI", sans-serif;
+        }
+        
+        .stApp {
+            background-color: #0E1117;
+            color: #F8FAFC;
+        }
+
+        h1 {
+            color: white;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        h2, h3 {
+            color: #E5E7EB;
+            font-weight: 600;
+        }
+
+        hr {
+            border-color: #2D3748;
+        }
+
+        /* Sidebar Styling */
+        section[data-testid="stSidebar"] {
+            background: #161B22;
+            border-right: 1px solid #30363D;
+        }
+
+        section[data-testid="stSidebar"] h1,
+        section[data-testid="stSidebar"] h2,
+        section[data-testid="stSidebar"] h3 {
+            color: white;
+        }
+
+        section[data-testid="stSidebar"] label {
+            color: #D1D5DB;
+            font-weight: 500;
+        }
+
+        /* Metric Cards */
+        div[data-testid="metric-container"] {
+            background: #1C2128;
+            border: 1px solid #30363D;
+            border-radius: 15px;
+            padding: 18px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.35);
+            transition: 0.3s;
+        }
+
+        div[data-testid="metric-container"]:hover {
+            transform: translateY(-4px);
+            border: 1px solid #7C3AED;
+            box-shadow: 0 8px 18px rgba(124,58,237,.35);
+        }
+
+        div[data-testid="metric-container"] label {
+            color: #A1A1AA;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        div[data-testid="metric-container"] div {
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Metric Left Borders (KPI Colors) */
+        div[data-testid="metric-container"]:nth-of-type(1) {
+            border-left: 6px solid #7C3AED;
+        }
+
+        div[data-testid="metric-container"]:nth-of-type(2) {
+            border-left: 6px solid #3B82F6;
+        }
+
+        div[data-testid="metric-container"]:nth-of-type(3) {
+            border-left: 6px solid #10B981;
+        }
+
+        div[data-testid="metric-container"]:nth-of-type(4) {
+            border-left: 6px solid #F59E0B;
+        }
+
+        div[data-testid="metric-container"]:nth-of-type(5) {
+            border-left: 6px solid #EC4899;
+        }
+
+        /* Plotly Container */
+        .js-plotly-plot {
+            border-radius: 15px;
+            border: 1px solid #30363D;
+            background: #161B22;
+            padding: 10px;
+        }
+
+        /* Dataframe Wrapper */
+        div[data-testid="stDataFrame"] {
+            border-radius: 15px;
+            border: 1px solid #30363D;
+            overflow: hidden;
+        }
+
+        /* Table Header */
+        thead tr th {
+            background: #1F2937 !important;
+            color: white !important;
+        }
+
+        /* Custom Buttons */
+        .stButton>button {
+            width: 100%;
+            background: #7C3AED;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            font-weight: 600;
+            transition: background 0.2s ease-in-out;
+        }
+
+        .stButton>button:hover {
+            background: #6D28D9;
+        }
+
+        /* Download Button */
+        .stDownloadButton>button {
+            width: 100%;
+            background: #10B981;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            font-weight: 600;
+            transition: background 0.2s ease-in-out;
+        }
+
+        .stDownloadButton>button:hover {
+            background: #059669;
+        }
+
+        /* Dropdowns and Select Inputs */
+        div[data-baseweb="select"] {
+            border-radius: 10px;
+        }
+
+        /* Multiselect Tags */
+        div[data-baseweb="tag"] {
+            background: #7C3AED;
+            color: white;
+        }
+
+        /* Slider Spacing */
+        .stSlider {
+            padding-top: 15px;
+        }
+
+        /* Alerts Styling */
+        div[data-testid="stAlert"] {
+            border-radius: 12px;
+        }
+
+        /* Expander Headers */
+        .streamlit-expanderHeader {
+            background: #1C2128;
+            border-radius: 10px;
+        }
+
+        /* Webkit Scrollbars */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #161B22;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #7C3AED;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8B5CF6;
+        }
+
+        /* Spacing / Containers */
+        .block-container {
+            padding-top: 1rem;
+            padding-left: 2rem;
+            padding-right: 2rem;
+            padding-bottom: 2rem;
+        }
+
+        /* Hide Streamlit Default Elements */
+        footer {
+            visibility: hidden;
+            height: 0px;
+        }
+
+        header {
+            visibility: hidden;
+            height: 0px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
 
 @st.cache_data
@@ -346,9 +555,9 @@ def normal_vs_cancer(df, gene_col, normal_col, cancer_col):
 
 
 # ----------------------------
-# Load CSS
+# Inject CSS
 # ----------------------------
-load_css("style.css")
+inject_custom_css()
 
 # ----------------------------
 # Load Dataset
