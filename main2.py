@@ -703,6 +703,12 @@ normal human tissues and cancer cell lines.
 """
 )
 
+st.markdown("Name: Manav Williams")
+st.markdown("UID: 2509032")
+st.markdown("Roll NO: 32")
+
+
+
 st.divider()
 
 # ----------------------------
