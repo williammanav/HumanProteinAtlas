@@ -2,6 +2,8 @@
 
 🧬 An interactive, high-performance Streamlit dashboard designed to explore, compare, and analyze RNA transcriptomic expression levels (nTPM) between normal human tissues and cancer cell lines.
 
+Live Deployment : https://humanproteinatlas.streamlit.app/
+
 ---
 
 ## Features
