@@ -2,19 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from pathlib import Path
-
-# Import utilities and charts
-from utils import load_css, load_data, detect_columns, filter_data
-from charts import (
-    gene_expression_bar,
-    top_genes_chart,
-    expression_distribution,
-    expression_heatmap,
-    correlation_heatmap,
-    fold_change_plot,
-    cellline_boxplot,
-    protein_class_pie
-)
+import plotly.express as px
+import plotly.graph_objects as go
 
 # ----------------------------
 # Page Config
@@ -26,10 +15,549 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+
 # ----------------------------
-# Load CSS
+# Helper & Utility Functions
 # ----------------------------
-load_css("style.css")
+
+def inject_custom_css():
+    """
+    Injects custom CSS directly into the Streamlit app to maintain premium design
+    without needing an external style.css file.
+    """
+    st.markdown(
+        """
+        <style>
+        /* ==========================================================
+           GENERAL & THEME OVERRIDES
+           ========================================================== */
+        html, body, [class*="css"] {
+            font-family: "Segoe UI", sans-serif;
+        }
+        
+        .stApp {
+            background-color: #0E1117;
+            color: #F8FAFC;
+        }
+
+        h1 {
+            color: white;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        h2, h3 {
+            color: #E5E7EB;
+            font-weight: 600;
+        }
+
+        hr {
+            border-color: #2D3748;
+        }
+
+        /* Sidebar Styling */
+        section[data-testid="stSidebar"] {
+            background: #161B22;
+            border-right: 1px solid #30363D;
+        }
+
+        section[data-testid="stSidebar"] h1,
+        section[data-testid="stSidebar"] h2,
+        section[data-testid="stSidebar"] h3 {
+            color: white;
+        }
+
+        section[data-testid="stSidebar"] label {
+            color: #D1D5DB;
+            font-weight: 500;
+        }
+
+        /* Metric Cards */
+        div[data-testid="metric-container"] {
+            background: #1C2128;
+            border: 1px solid #30363D;
+            border-radius: 15px;
+            padding: 18px;
+            box-shadow: 0 3px 12px rgba(0,0,0,.35);
+            transition: 0.3s;
+        }
+
+        div[data-testid="metric-container"]:hover {
+            transform: translateY(-4px);
+            border: 1px solid #7C3AED;
+            box-shadow: 0 8px 18px rgba(124,58,237,.35);
+        }
+
+        div[data-testid="metric-container"] label {
+            color: #A1A1AA;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        div[data-testid="metric-container"] div {
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Metric Left Borders (KPI Colors) */
+        div[data-testid="metric-container"]:nth-of-type(1) {
+            border-left: 6px solid #7C3AED;
+        }
+
+        div[data-testid="metric-container"]:nth-of-type(2) {
+            border-left: 6px solid #3B82F6;
+        }
+
+        div[data-testid="metric-container"]:nth-of-type(3) {
+            border-left: 6px solid #10B981;
+        }
+
+        div[data-testid="metric-container"]:nth-of-type(4) {
+            border-left: 6px solid #F59E0B;
+        }
+
+        div[data-testid="metric-container"]:nth-of-type(5) {
+            border-left: 6px solid #EC4899;
+        }
+
+        /* Plotly Container */
+        .js-plotly-plot {
+            border-radius: 15px;
+            border: 1px solid #30363D;
+            background: #161B22;
+            padding: 10px;
+        }
+
+        /* Dataframe Wrapper */
+        div[data-testid="stDataFrame"] {
+            border-radius: 15px;
+            border: 1px solid #30363D;
+            overflow: hidden;
+        }
+
+        /* Table Header */
+        thead tr th {
+            background: #1F2937 !important;
+            color: white !important;
+        }
+
+        /* Custom Buttons */
+        .stButton>button {
+            width: 100%;
+            background: #7C3AED;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            font-weight: 600;
+            transition: background 0.2s ease-in-out;
+        }
+
+        .stButton>button:hover {
+            background: #6D28D9;
+        }
+
+        /* Download Button */
+        .stDownloadButton>button {
+            width: 100%;
+            background: #10B981;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            font-weight: 600;
+            transition: background 0.2s ease-in-out;
+        }
+
+        .stDownloadButton>button:hover {
+            background: #059669;
+        }
+
+        /* Dropdowns and Select Inputs */
+        div[data-baseweb="select"] {
+            border-radius: 10px;
+        }
+
+        /* Multiselect Tags */
+        div[data-baseweb="tag"] {
+            background: #7C3AED;
+            color: white;
+        }
+
+        /* Slider Spacing */
+        .stSlider {
+            padding-top: 15px;
+        }
+
+        /* Alerts Styling */
+        div[data-testid="stAlert"] {
+            border-radius: 12px;
+        }
+
+        /* Expander Headers */
+        .streamlit-expanderHeader {
+            background: #1C2128;
+            border-radius: 10px;
+        }
+
+        /* Webkit Scrollbars */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #161B22;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #7C3AED;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8B5CF6;
+        }
+
+        /* Spacing / Containers */
+        .block-container {
+            padding-top: 1rem;
+            padding-left: 2rem;
+            padding-right: 2rem;
+            padding-bottom: 2rem;
+        }
+
+        /* Hide Streamlit Default Elements */
+        footer {
+            visibility: hidden;
+            height: 0px;
+        }
+
+        header {
+            visibility: hidden;
+            height: 0px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+@st.cache_data
+def load_data(filepath="proteinatlas_search.tsv"):
+    """
+    Loads the Human Protein Atlas dataset from a TSV file and caches the result.
+    """
+    return pd.read_csv(filepath, sep="\t")
+
+
+def detect_columns(df):
+    """
+    Scans the dataframe columns and automatically categorizes them into:
+    - normal_cols: tissue-specific RNA expression columns [nTPM]
+    - cell_cols: cancer cell line expression columns [nTPM]
+    - metadata: a dictionary containing column names for gene, description,
+      chromosome, protein class, disease involvement, and evidence.
+    """
+    expression_cols = [c for c in df.columns if "[nTPM]" in c]
+    normal_cols = []
+    cell_cols = []
+    
+    for col in expression_cols:
+        col_lower = col.lower()
+        if "tissue" in col_lower:
+            normal_cols.append(col)
+        else:
+            cell_cols.append(col)
+
+    metadata = {
+        "gene": None,
+        "description": None,
+        "protein_class": None,
+        "disease": None,
+        "chromosome": None,
+        "evidence": None
+    }
+    
+    for c in df.columns:
+        lc = c.lower()
+        if lc == "gene":
+            metadata["gene"] = c
+        elif "description" in lc:
+            metadata["description"] = c
+        elif "protein" in lc and "class" in lc:
+            metadata["protein_class"] = c
+        elif "disease" in lc:
+            metadata["disease"] = c
+        elif "chromosome" in lc:
+            metadata["chromosome"] = c
+        elif "evidence" in lc:
+            metadata["evidence"] = c
+            
+    return normal_cols, cell_cols, metadata
+
+
+def filter_data(df, normal_col, expression_range, protein_col=None, selected_proteins=None, disease_col=None, selected_diseases=None):
+    """
+    Filters the dataset based on protein class, disease involvement,
+    and expression range.
+    """
+    filtered = df.copy()
+    
+    if protein_col and selected_proteins:
+        filtered = filtered[filtered[protein_col].isin(selected_proteins)]
+        
+    if disease_col and selected_diseases:
+        filtered = filtered[filtered[disease_col].isin(selected_diseases)]
+        
+    filtered = filtered[
+        (filtered[normal_col] >= expression_range[0]) &
+        (filtered[normal_col] <= expression_range[1])
+    ]
+    
+    return filtered
+
+
+# ----------------------------
+# Chart Functions
+# ----------------------------
+
+def gene_expression_bar(df, gene_col, gene, normal_col, cell_lines):
+    """
+    Bar chart comparing one gene across
+    normal tissue and selected cancer cell lines.
+    """
+    row = df[df[gene_col] == gene]
+
+    if row.empty:
+        return None
+
+    samples = ["Normal Tissue"]
+    values = [row.iloc[0][normal_col]]
+
+    for col in cell_lines:
+        samples.append(col.replace("[nTPM]", ""))
+        values.append(row.iloc[0][col])
+
+    plot_df = pd.DataFrame({
+        "Sample": samples,
+        "Expression": values
+    })
+
+    fig = px.bar(
+        plot_df,
+        x="Sample",
+        y="Expression",
+        color="Sample",
+        text_auto=".2f",
+        title=f"{gene} Expression"
+    )
+
+    fig.update_layout(
+        template="plotly_dark",
+        height=420,
+        showlegend=False,
+        xaxis_title="",
+        yaxis_title="Expression (nTPM)"
+    )
+
+    return fig
+
+
+def top_genes_chart(df, expression_col, gene_col, top_n=10):
+    top = (
+        df[[gene_col, expression_col]]
+        .sort_values(expression_col, ascending=False)
+        .head(top_n)
+    )
+
+    fig = px.bar(
+        top,
+        x=expression_col,
+        y=gene_col,
+        orientation="h",
+        color=expression_col,
+        text_auto=".1f"
+    )
+
+    fig.update_layout(
+        template="plotly_dark",
+        height=420,
+        yaxis=dict(autorange="reversed"),
+        xaxis_title="Expression (nTPM)",
+        yaxis_title=""
+    )
+
+    return fig
+
+
+def expression_distribution(df, expression_col):
+    fig = px.histogram(
+        df,
+        x=expression_col,
+        nbins=40,
+        opacity=0.85
+    )
+
+    fig.update_layout(
+        template="plotly_dark",
+        height=420,
+        xaxis_title="Expression (nTPM)",
+        yaxis_title="Number of Genes"
+    )
+
+    return fig
+
+
+def expression_heatmap(df, gene_col, cell_lines, top_n=20):
+    heat_df = (
+        df[[gene_col] + cell_lines]
+        .head(top_n)
+        .set_index(gene_col)
+    )
+
+    fig = px.imshow(
+        heat_df,
+        labels=dict(
+            x="Cell Line",
+            y="Gene",
+            color="nTPM"
+        ),
+        aspect="auto"
+    )
+
+    fig.update_layout(
+        template="plotly_dark",
+        height=650
+    )
+
+    return fig
+
+
+def correlation_heatmap(df, cell_lines):
+    corr = df[cell_lines].corr()
+
+    fig = px.imshow(
+        corr,
+        text_auto=".2f",
+        color_continuous_scale="Viridis"
+    )
+
+    fig.update_layout(
+        template="plotly_dark",
+        height=500
+    )
+
+    return fig
+
+
+def fold_change_plot(df, gene_col, normal_col, cancer_col):
+    plot_df = df[[gene_col, normal_col, cancer_col]].copy()
+
+    plot_df["FoldChange"] = (
+        plot_df[cancer_col] /
+        (plot_df[normal_col] + 0.01)
+    )
+
+    fig = px.scatter(
+        plot_df,
+        x=normal_col,
+        y=cancer_col,
+        hover_name=gene_col,
+        color="FoldChange"
+    )
+
+    fig.update_layout(
+        template="plotly_dark",
+        height=500,
+        xaxis_title="Normal Tissue",
+        yaxis_title="Cancer Cell Line"
+    )
+
+    fig.add_shape(
+        type="line",
+        x0=0,
+        y0=0,
+        x1=plot_df[normal_col].max(),
+        y1=plot_df[normal_col].max(),
+        line=dict(
+            dash="dash",
+            color="white"
+        )
+    )
+
+    return fig
+
+
+def cellline_boxplot(df, cell_lines):
+    box_df = df[cell_lines].melt(
+        var_name="Cell Line",
+        value_name="Expression"
+    )
+
+    fig = px.box(
+        box_df,
+        x="Cell Line",
+        y="Expression",
+        color="Cell Line"
+    )
+
+    fig.update_layout(
+        template="plotly_dark",
+        height=500,
+        showlegend=False
+    )
+
+    return fig
+
+
+def protein_class_pie(df, protein_col):
+    counts = (
+        df[protein_col]
+        .value_counts()
+        .head(8)
+        .reset_index()
+    )
+
+    counts.columns = ["Protein Class", "Count"]
+
+    fig = px.pie(
+        counts,
+        values="Count",
+        names="Protein Class",
+        hole=0.45
+    )
+
+    fig.update_layout(
+        template="plotly_dark",
+        height=450
+    )
+
+    return fig
+
+
+def normal_vs_cancer(df, gene_col, normal_col, cancer_col):
+    fig = px.scatter(
+        df,
+        x=normal_col,
+        y=cancer_col,
+        hover_name=gene_col,
+        opacity=0.75
+    )
+
+    fig.update_layout(
+        template="plotly_dark",
+        height=500,
+        xaxis_title="Normal Tissue",
+        yaxis_title="Cancer Cell Line"
+    )
+
+    return fig
+
+
+# ----------------------------
+# Inject CSS
+# ----------------------------
+inject_custom_css()
 
 # ----------------------------
 # Load Dataset
@@ -140,19 +668,6 @@ expression_range = st.sidebar.slider(
 
 st.sidebar.divider()
 
-st.write("1. App started")
-
-load_css("style.css")
-st.write("2. CSS loaded")
-
-df = load_data("proteinatlas_search.tsv")
-st.write("3. Data loaded")
-
-normal_cols, cell_cols, metadata = detect_columns(df)
-st.write("4. Columns detected")
-
-filtered = filter_data(...)
-st.write("5. Data filtered")
 st.sidebar.info(
     """
 Human Protein Atlas (HPA)
