@@ -36,8 +36,8 @@ def inject_custom_css():
         }
         
         .stApp {
-            background-color: #0E1117;
-            color: #F8FAFC;
+            background-color: #FFFFFF;
+            color: #111827;
         }
 
         h1 {
